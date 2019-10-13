@@ -10,4 +10,6 @@ Time Series Modelling of 6 stocks from Yahoo Finance India
 5. Medium Market Cap - Gillette
 6. Low Market Cap - Spicejet
 
-Do check 
+Do check 'R' file above mentioned with comments and results.
+
+#ARIME #ADF TEST #ACF #PACF #AIC #BIC 
