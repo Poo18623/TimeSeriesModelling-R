@@ -1,0 +1,454 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+Loading the installed packages
+
+```{r}
+library(ggplot2)
+library(forecast)
+library(plotly)
+library(ggfortify)
+library(tseries)
+library(gridExtra)
+library(docstring)
+library(readr)
+library(here)
+library(timeSeries)
+library(packrat)
+here()
+```
+
+The data of 6 TimeSeries Data of monthly adjusted closing prices is retrieved from yahoo finance from 1996-01-01 to 2019-09-22. Loading the monthly prices, removing and replacing the missing values.
+
+6 TimeSeries Data are,
+
+1) BSE-500
+2) BSE-200
+3) BSE-100
+4) High Market Cap Index - RELIANCE
+5) Medium  Market Cap Index - GILLETTE
+6) Small Market Cap Index - SPICEJET
+
+```{r}
+#S&P BSE_500 INDEX 
+
+BSE_500 <- tseries::get.hist.quote(instrument="BSE-500.BO", start="1996-01-01",
+                      end="2019-09-29", quote="AdjClose",
+                      provider="yahoo", origin="1970-01-01",
+                      compression="m", retclass="zoo")
+nrow(BSE_500)
+BSE_500 <- na.omit(BSE_500)
+BSE_500.ts <- ts(BSE_500)
+
+#S&P BSE 200 INDEX 
+
+BSE_200 <- tseries::get.hist.quote(instrument="BSE-200.BO", start="1996-01-01",
+                      end="2019-09-29", quote="AdjClose",
+                      provider="yahoo", origin="1970-01-01",
+                      compression="m", retclass="zoo")
+nrow(BSE_200)
+BSE_200 <- na.omit(BSE_200)
+BSE_200.ts <- ts(BSE_200)
+
+#S&P BSE 100 INDEX (BSE-100.BO)
+
+BSE_100 <- tseries::get.hist.quote(instrument="BSE-100.BO", start="1996-01-01",
+                      end="2019-09-29", quote="AdjClose",
+                      provider="yahoo", origin="1970-01-01",
+                      compression="m", retclass="zoo")
+nrow(BSE_100)
+BSE_100 <- na.omit(BSE_100)
+BSE_100.ts <- ts(BSE_100)
+
+#High Cap Index- Reliance Industries Limited (RELIANCE.BO)
+
+Reliance <- tseries::get.hist.quote(instrument="RELIANCE.BO", start="1996-01-01",
+                      end="2019-09-29", quote="AdjClose",
+                      provider="yahoo", origin="1970-01-01",
+                      compression="m", retclass="zoo")
+nrow(Reliance)
+Reliance <- na.omit(Reliance)
+nrow(Reliance)
+
+# Medium Cap Index-L&T Finance Holdings Limited (L&TFH.BO)
+
+GILLETTE <- tseries::get.hist.quote(instrument="GILLETTE.BO", start="1996-01-01",
+                      end="2019-09-29", quote="AdjClose",
+                      provider="yahoo", origin="1970-01-01",
+                      compression="m", retclass="zoo")
+nrow(GILLETTE)
+GILLETTE <- na.omit(GILLETTE)
+GILLETTE.ts <- ts(GILLETTE)
+
+#Small Cap Index- SPICEJET Limited (SPICEJET.BO)
+
+SPICEJET <- tseries::get.hist.quote(instrument="SPICEJET.BO", start="1996-01-01",
+                      end="2019-09-22", quote="AdjClose",
+                      provider="yahoo", origin="1970-01-01",
+                      compression="m", retclass="zoo")
+nrow(SPICEJET)
+SPICEJET <- na.omit(SPICEJET)
+SPICEJET.ts <- ts(SPICEJET)
+
+```
+
+```{r}
+
+BSE_500_training <- ts(BSE_500, start=c(1996, 1), end=c(2018, 12), freq=12)
+BSE_200_training <- ts(BSE_200, start=c(1996, 1), end=c(2018, 12), freq=12)
+BSE_100_training <- ts(BSE_100, start=c(1996, 1), end=c(2018, 12), freq=12)
+Reliance_training <- ts(Reliance, start=c(1996, 1), end=c(2018, 12), freq=12)
+GILLETTE_training <- ts(GILLETTE, start=c(1995, 1), end=c(2018, 12), freq=12)
+SPICEJET_training <- ts(SPICEJET, start=c(1996, 1), end=c(2018, 12), freq=12)
+
+```
+
+
+```{r}
+
+BSE_500.ts<-ts(BSE_500,start=c(2006, 1),frequency = 12)
+BSE_200.ts<-ts(BSE_200,start=c(2006, 1),frequency = 12)
+BSE_100.ts<-ts(BSE_100,start=c(2006, 1),frequency = 12)
+Reliance.ts<-ts(Reliance,start=c(2006, 1),frequency = 12)
+GILLETTE.ts<-ts(GILLETTE,start=c(2006, 1),frequency = 12)
+SPICEJET.ts<-ts(SPICEJET,start=c(2006, 1),frequency = 12)
+
+```
+
+
+```{r}
+library(TTR)
+here()
+decomp <- decompose(BSE_500.ts)
+BSE_500dec <- decompose(BSE_500.ts)
+plot(BSE_500dec)
+
+```
+
+
+```{r}
+adf.test(BSE_500_training)
+```
+
+P value is greater than 0.05.So, our time series is not stationary. To make it stationary, we take the first difference of the data
+
+Plot Auto correlation and Partial correlation using ACF & PACF
+
+```{r}
+#1st difference
+tsDiff_BSE_500_training <- diff(BSE_500_training)
+adf.test(tsDiff_BSE_500_training)
+```
+
+P value is significant as it is less than 0.05 hence Time Series is Stationary
+
+
+```{r}
+acf(tsDiff_BSE_500_training)
+pacf(tsDiff_BSE_500_training)
+```
+
+
+```{r}
+decomp <- decompose(BSE_200.ts)
+BSE_200dec <- decompose(BSE_200.ts)
+plot(BSE_200dec)
+```
+
+```{r}
+adf.test(BSE_200_training)
+```
+P value is significant as it is less than 0.05 hence Time Series is Stationary
+
+```{r}
+acf(BSE_200_training)
+pacf(BSE_200_training)
+
+```
+
+
+```{r}
+
+BSE_100dec <- decompose(BSE_100.ts)
+plot(BSE_100dec)
+
+```
+
+```{r}
+adf.test(BSE_100_training)
+```
+
+P value is significant as it is less than 0.05 hence Time Series is Stationary
+
+```{r}
+acf(BSE_100_training)
+pacf(BSE_100_training)
+```
+
+
+```{r}
+decomp <- decompose(Reliance.ts)
+Reliancedec <- decompose(Reliance.ts)
+plot(Reliancedec)
+
+```
+
+```{r}
+adf.test(Reliance_training)
+
+```
+
+P value is greater than 0.05.So, our time series is not stationary. To make it stationary, we take the first difference of the data
+
+```{r}
+#1st difference
+tsDiff_Reliance_training <- diff(Reliance_training)
+adf.test(tsDiff_Reliance_training)
+
+```
+P value is significant as it is less than 0.05 hence Time Series is Stationary
+
+```{r}
+acf(tsDiff_Reliance_training)
+pacf(tsDiff_Reliance_training)
+```
+
+
+
+```{r}
+decomp <- decompose(GILLETTE.ts)
+GILLETTEdec <- decompose(GILLETTE.ts)
+plot(GILLETTEdec)
+
+```
+
+
+```{r}
+adf.test(GILLETTE_training)
+
+```
+
+P value is greater than 0.05.So, our time series is not stationary. To make it stationary, we take the first difference of the data
+
+```{r}
+#1st difference
+tsDiff_GILLETTE_training <- diff(GILLETTE_training)
+adf.test(tsDiff_GILLETTE_training)
+
+```
+
+P value is significant as it is less than 0.05 hence Time Series is Stationary
+
+```{r}
+acf(tsDiff_GILLETTE_training)
+pacf(tsDiff_GILLETTE_training)
+```
+
+P value is significant as it is less than 0.05 hence Time Series is Stationary
+
+```{r}
+decomp <- decompose(SPICEJET.ts)
+SPICEJETdec <- decompose(SPICEJET.ts)
+plot(SPICEJETdec)
+```
+
+
+```{r}
+adf.test(SPICEJET_training)
+```
+
+P value is greater than 0.05.So, our time series is not stationary. To make it stationary, we take the first difference of the data
+
+```{r}
+#1st difference
+tsDiff_SPICEJET_training<- diff(SPICEJET_training)
+adf.test(tsDiff_SPICEJET_training)
+```
+
+P value is significant as it is less than 0.05 hence Time Series is Stationary
+
+```{r}
+acf(tsDiff_SPICEJET_training)
+pacf(tsDiff_SPICEJET_training)
+
+```
+
+Insights from above Time Series Analysis od training data
+
+1) BSE-500 - Time Series is stationary after first difference
+2) BSE-200 - Time Series is stationary
+3) BSE-100 - Time Series is stationary
+4) High Market Cap Index - RELIANCE - After first difference Time Series is stationary
+5) Medium  Market Cap Index - GILLETTE- After first difference Time Series is stationary
+6) Small Market Cap Index - SPICEJET- After first difference Time Series is stationary
+
+
+
+```{r}
+auto.arima(BSE_500_training, trace = TRUE)
+
+fit1 <- Arima(BSE_500_training, order = c(1,1,0),
+	include.drift = TRUE)
+summary(fit1)
+fit1$aic
+fit1$bic
+attributes(fit1)
+
+plot(forecast(fit1,h = 12, level = (99.5)))
+forecast(fit1, h = 12, level = (99.5))
+
+```
+
+#BSE-500
+
+[AIC] 4379.453
+[BIC] 4390.303
+re-fitting the best model(s) without approximations and taking (1,1,0)
+The forecast from Arima with drift gives the forecasted values with upper boundary and lower boundary values.
+
+
+
+```{r}
+auto.arima(BSE_200_training, trace = TRUE)
+
+fit2 <- Arima(BSE_200_training, order = c(1,0,1),
+	include.drift = TRUE)
+summary(fit2)
+fit2$aic
+fit2$bic
+attributes(fit2)
+
+plot(forecast(fit2,h = 12, level = (99.5)))
+forecast(fit2, h = 12, level = (99.5))
+```
+
+#BSE-200
+
+[AIC] 4329.65
+[BIC] 4347.752
+re-fitting the best model(s) without approximations and taking (1,0,1)
+The forecast from Arima with drift gives the forecasted values with upper boundary and lower boundary values.
+
+
+```{r}
+auto.arima(BSE_100_training, trace = TRUE)
+
+fit3 <- Arima(BSE_100_training, order = c(2,0,0),
+	include.drift = TRUE)
+summary(fit3)
+fit3$aic
+fit3$bic
+attributes(fit3)
+
+plot(forecast(fit3,h = 12, level = (99.5)))
+forecast(fit3, h = 12, level = (99.5))
+
+```
+
+#BSE-100
+
+[AIC] 4341.203
+[BIC] 4359.305
+re-fitting the best model(s) without approximations and taking (2,0,0)
+The forecast from Arima with drift gives the forecasted values with upper boundary and lower boundary values.
+
+
+```{r}
+auto.arima(Reliance_training, trace = TRUE)
+
+fit4 <- Arima(Reliance_training, order = c(3,1,2),
+	include.drift = TRUE)
+summary(fit4)
+fit4$aic
+fit4$bic
+attributes(fit4)
+
+plot(forecast(fit4,h = 12, level = (99.5)))
+forecast(fit4, h = 12, level = (99.5))
+```
+
+#Reliance
+
+[AIC] 3395.683
+[BIC] 3421
+re-fitting the best model(s) without approximations and taking (3,1,2)
+The forecast from Arima with drift gives the forecasted values with upper boundary and lower boundary values.
+
+
+```{r}
+auto.arima(GILLETTE_training, trace = TRUE)
+
+fit5 <- Arima(GILLETTE_training, order = c(0,1,0),
+	include.drift = TRUE)
+summary(fit5)
+fit5$aic
+fit5$bic
+attributes(fit5)
+
+plot(forecast(fit5,h = 12, level = (99.5)))
+forecast(fit5, h = 12, level = (99.5))
+```
+
+#GILLETTE
+
+[AIC] 4184.484
+[BIC] 4191.803
+re-fitting the best model(s) without approximations and taking (0,1,0)
+The forecast from Arima with drift gives the forecasted values with upper boundary and lower boundary values.
+
+```{r}
+auto.arima(SPICEJET_training, trace = TRUE)
+
+fit6 <- Arima(SPICEJET_training, order = c(0,1,0),
+	include.drift = TRUE)
+summary(fit6)
+fit6$aic
+fit6$bic
+attributes(fit6)
+
+plot(forecast(fit6,h = 12, level = (99.5)))
+forecast(fit6, h = 12, level = (99.5))
+```
+
+
+#SPICEJET
+
+[AIC] 1907.925
+[BIC] 1915.158
+re-fitting the best model(s) without approximations and taking (0,1,0)
+The forecast from Arima with drift gives the forecasted values with upper boundary and lower boundary values.
+
+The model with lower AIC and BIC values will be preferred which is Spicejet in the above case.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
